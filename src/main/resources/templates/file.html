@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link href="https://cdn.staticfile.org/webuploader/0.1.5/webuploader.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="http://cdn.staticfile.org/jquery/1.10.2/jquery.js"></script>
+	<script type="text/javascript" src="http://cdn.staticfile.org/webuploader/0.1.5/webuploader.min.js"></script>
+</head>
+<body>
+<!-- 	<div id="uploader" class="wu-example"> -->
+<!-- 		<!--用来存放文件信息--> 
+<!-- 		<div id="thelist" class="uploader-list"></div> -->
+<!-- 		<div class="btns"> -->
+<!-- 			<div id="picker">选择文件</div> -->
+<!-- 			<button id="ctlBtn" class="btn btn-default">开始上传</button> -->
+<!-- 		</div> -->
+<!-- 	</div> -->
+
+		<input type="file" name="file" id="file" onchange="upload()"> 
+		
+		<div style="height:30px;width:200px;border:1px solid silver;">
+			<div style="height:100%;background-color:blue;width:0;" id="progress"></div>
+		</div>
+</body>
+<script type="text/javascript">
+// var GUID = WebUploader.Base.guid();//一个GUID
+// var uploader = WebUploader.create({
+//     // swf文件路径
+//     swf: 'http://cdn.staticfile.org/webuploader/0.1.5/Uploader.swf',
+//     // 文件接收服务端。
+//     server: './upload/upload',
+//     formData:{
+//     	guid : GUID
+//     },
+//     // 选择文件的按钮。可选。
+//     // 内部根据当前运行是创建，可能是input元素，也可能是flash.
+//     pick: '#picker',
+// 	chunked : true, // 分片处理
+// 	chunkSize : 10 * 1024 * 1024, // 每片32M,
+// 	chunkRetry : false,// 如果失败，则不重试
+// 	threads : 1,// 上传并发数。允许同时最大上传进程数。
+//     // 不压缩image, 默认如果是jpeg，文件上传前会压缩一把再上传！
+//     resize: false
+// });
+// $("#ctlBtn").click(function () {
+//    uploader.upload();
+// });
+// //当文件上传成功时触发。
+// uploader.on( "uploadSuccess", function( file ) {
+// 	 $.post('./upload/merge', { guid: GUID, fileName: file.name }, function (data) {
+// 		 if(data.code == 200){
+// 			 alert('上传成功!');
+// 		 }
+//      });
+// });
+		
+		var guid = Math.random();
+		
+		 var bytesPerPiece = 10 * 1024 * 1024; // 每个文件切片大小定为10MB .
+        var totalPieces;
+        //发送请求
+        function upload() {
+			debugger;
+            var blob = document.getElementById("file").files[0];
+            var start = 0;
+            var end;
+            var index = 0;
+            var filesize = blob.size;
+            var filename = blob.name;
+
+            //计算文件切片总数
+            totalPieces = Math.ceil(filesize / bytesPerPiece);
+            while(start < filesize) {
+                end = start + bytesPerPiece;
+                if(end > filesize) {
+                    end = filesize;
+                }
+
+                var chunk = blob.slice(start,end);//切割文件    
+                var sliceIndex= blob.name + index;
+                var formData = new FormData();
+                formData.append("file", chunk);
+                formData.append("guid",guid);
+                formData.append("chunk",index);
+                formData.append("chunks",totalPieces);
+                formData.append("filename",filename);
+                $.ajax({
+                    url: './upload/upload',
+                    type: 'POST',
+                    cache: false,
+                    data: formData,
+                    processData:false,
+                    contentType: false,
+                    async:false,
+                }).done(function(res){ 
+                	console.log(start ,index);
+					if(res == "1"){
+						start = end;
+						
+					
+		                index++;
+		                var progress = index/totalPieces;
+		                console.log(progress);
+// 		                $("#progress").css("width",progress*200 + "px");
+					}else if(res == "2"){
+						console.log(222222);
+						alert("上传成功");
+					}
+                }).fail(function(res) {
+
+                });
+                
+            }
+        }
+
+
+</script>
+</html>
